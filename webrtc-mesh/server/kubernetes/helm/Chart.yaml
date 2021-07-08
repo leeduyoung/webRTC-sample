@@ -1,0 +1,6 @@
+version: 0.0.1
+apiVersion: v1
+name: webrtc-mesh
+description: Helm chart for webrtc-mesh
+source:
+  - https://github.com/leeduyoung/webRTC-sample

@@ -1,0 +1,32 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: webrtc-mesh-config
+  namespace: app
+data:
+  LogLevel: 'debug'
+  Mode: 'local'
+  Version: 'VERSION'
+
+  # AWS S3 IAM
+  AWS_ACCESS_KEY_ID: 'AKIAQF4IR3OJWGTA7E7R'
+  AWS_SECRET_ACCESS_KEY: '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'
+  AWS_DEFAULT_REGION: 'ap-northeast-2'
+
+  ## RDS Setting
+  RDS_MASTER_HOSTNAME: 'develop-luxrobo-cluster.cluster-cb10can9foe2.ap-northeast-2.rds.amazonaws.com'
+  RDS_REPLECA_HOSTNAME: 'develop-luxrobo-cluster.cluster-ro-cb10can9foe2.ap-northeast-2.rds.amazonaws.com'
+  RDS_USERNAME: 'devLuxroboAdm'
+  RDS_PASSWORD: 'Dev!LuxRobo#200717$'
+  RDS_PORT: '3306'
+
+  ## RDS DATABASE
+  RDS_DB: MODI_DIAGNOSIS
+  RDS_DB_MODI_DIAGNOSIS: MODI_DIAGNOSIS
+
+  SQS_QUEUE_URL: 'https://sqs.ap-northeast-2.amazonaws.com/012634413971'
+  SQS_QUEUE_NAME_INTEGRATED: 'dev-Integrated-queue.fifo'
+
+  ## Sentry
+  SENTRY_DSN: 'https://43c72b3e02744d519db3ec3d9dff6187@o444513.ingest.sentry.io/5726886'
+  SENTRY_SERVICE_NAME: 'modi-diagnosis'

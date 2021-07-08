@@ -1,0 +1,27 @@
+namespace:
+  name: 'app'
+
+metadata:
+  name: 'webrtc-mesh'
+
+labels:
+  env: 'dev'
+  cluster: 'luxrobo'
+
+image:
+  tag: latest
+  repository: leedu/webrtc_mesh:latest
+  imagePullPolicy: Always
+
+service:
+  http: 52281
+  targetHttp: 52281
+
+ingress:
+  host: dev-apiv1
+  domain: luxrobo.com
+  targetHttp: 52281
+
+replicas:
+  count: 1
+  revisionHistoryLimit: 1
