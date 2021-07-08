@@ -14,7 +14,7 @@ let users = {}
 
 let socketToRoom = {}
 
-const maximum = process.env.MAXIMUM || 4
+const maximum = process.env.MAXIMUM || 8
 
 io.on('connection', (socket) => {
   socket.on('join_room', (data) => {
