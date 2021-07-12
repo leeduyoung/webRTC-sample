@@ -34,12 +34,16 @@ function App() {
     );
     let localStream: MediaStream;
 
+    /**
+     * 자신을 제외한 같은 방의 모든 user 목록을 받아온다
+     */
     newSocket.on(
       'all_users',
       (allUsers: Array<{ id: string; email: string }>) => {
         let len = allUsers.length;
 
         for (let i = 0; i < len; i++) {
+          // user마다 createPeerConnection 함수를 호출해서 각각의 RTCPeerConnection을 생성
           createPeerConnection(
             allUsers[i].id,
             allUsers[i].email,
@@ -48,6 +52,10 @@ function App() {
           );
           let pc: RTCPeerConnection = pcs[allUsers[i].id];
           if (pc) {
+            /**
+             * 해당 user를 위해 생성한 RTCPeerConnection을 통해 createOffer 함수를 호출하고
+             * offer signal을 보낸다
+             */
             pc.createOffer({
               offerToReceiveAudio: true,
               offerToReceiveVideo: true,
@@ -78,17 +86,25 @@ function App() {
         offerSendEmail: string;
       }) => {
         console.log('get offer');
+
+        /**
+         * offer를 보낸 user와의 통신을 위해 createPeerConnection 함수를 호출해서 RTCPeerConnection을 생성
+         */
         createPeerConnection(
           data.offerSendID,
           data.offerSendEmail,
           newSocket,
           localStream,
         );
+
         let pc: RTCPeerConnection = pcs[data.offerSendID];
         if (pc) {
+          // 해당 user를 위해 생성한 RTCPeerConnection의 remoteDescription을 해당 user에게서 전달 받은 sdp로 설정
           pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(
             () => {
               console.log('answer set remote description success');
+
+              // createAnswer 함수를 호출해서 offer를 보낸 상대방에게 answer signal을 보낸다
               pc.createAnswer({
                 offerToReceiveVideo: true,
                 offerToReceiveAudio: true,
@@ -115,6 +131,8 @@ function App() {
       'getAnswer',
       (data: { sdp: RTCSessionDescription; answerSendID: string }) => {
         console.log('get answer');
+
+        // answer를 보낸 user를 위해 생성해 놓은 RTCPeerConnection의 remoteDescription을 answer을 보낸 user의 sdp로 설정
         let pc: RTCPeerConnection = pcs[data.answerSendID];
         if (pc) {
           pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
@@ -127,6 +145,8 @@ function App() {
       'getCandidate',
       (data: { candidate: RTCIceCandidateInit; candidateSendID: string }) => {
         console.log('get candidate');
+
+        // candidate를 보낸 user를 위해 생성해 놓은 RTCPeerConnection에 받은 RTCIceCandidate를 추가
         let pc: RTCPeerConnection = pcs[data.candidateSendID];
         if (pc) {
           pc.addIceCandidate(new RTCIceCandidate(data.candidate)).then(() => {
@@ -136,6 +156,10 @@ function App() {
       },
     );
 
+    /**
+     * pcs Dictionary에서 해당 user의 RTCPeerConnection을 삭제
+     * users에서 해당 user의 데이터를 삭제
+     */
     newSocket.on('user_exit', (data: { id: string }) => {
       pcs[data.id].close();
       delete pcs[data.id];
@@ -144,6 +168,9 @@ function App() {
 
     setSocket(newSocket);
 
+    /**
+     * getUserMedia() 함수를 호출해서 자신의 MediaStream을 얻고 localVideoRef에 등록
+     */
     navigator.mediaDevices
       .getUserMedia({
         audio: true,
@@ -157,6 +184,10 @@ function App() {
 
         localStream = stream;
 
+        /**
+         * 방에 참가했다고 signaling server에 알린다
+         * 이후에 all_users 이벤트가 온다
+         */
         newSocket.emit('join_room', {
           room: '1234',
           email: 'sample@naver.com',
@@ -167,6 +198,16 @@ function App() {
       });
   }, []);
 
+  /**
+   * 특정 user를 위한 PeerConnection을 생성하고 localStream을 RTCPeerConnection에 등록
+   * pcs 변수에 socketId, RTCPeerConnection을 key/value 형태로 저장
+   *
+   * @param socketID
+   * @param email
+   * @param newSocket
+   * @param localStream
+   * @returns
+   */
   const createPeerConnection = (
     socketID: string,
     email: string,
@@ -178,6 +219,12 @@ function App() {
     // add pc to peerConnections object
     pcs = { ...pcs, [socketID]: pc };
 
+    /**
+     * offer 또는 answer signal을 생성한 후부터 본인의 icecandidate 정보 이벤트가 발생
+     * offer 또는 answer를 보냈던 상대방에게 본인의 icecandidate 정보를 signaling server를 통해 보낸다
+     *
+     * @param e
+     */
     pc.onicecandidate = (e) => {
       if (e.candidate) {
         console.log('onicecandidate');
@@ -189,10 +236,19 @@ function App() {
       }
     };
 
+    // ICE connection 상태가 변경되었을때 호출
     pc.oniceconnectionstatechange = (e) => {
       console.log(e);
     };
 
+    /**
+     * 상대방의 RTCSessionDescription을 본인의 RTCPeerConnection에서의 remoteSessionDescription으로 지정하면
+     * 상대방의 track 데이터에 대한 이벤트가 발생
+     *
+     * 상대방의 데이터 stream을 등록
+     *
+     * @param e
+     */
     pc.ontrack = (e) => {
       console.log('ontrack success');
       setUsers((oldUsers) => oldUsers.filter((user) => user.id !== socketID));
